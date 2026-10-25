@@ -43,6 +43,8 @@ SCEN_LABEL = {
 
 
 def plot_figure_1(cfg, tab_dir, idx_dir, fig_dir):
+    if (fig_dir / "Fig1_study_area.png").exists():
+        return
     gp_path = REPO_ROOT / cfg["domain"]["grid_points_file"]
     bnd_path = REPO_ROOT / cfg["domain"]["boundary_file"]
     gp = pd.read_csv(gp_path)
@@ -248,21 +250,25 @@ def plot_figure_3(cfg, tab_dir, idx_dir, fig_dir):
     ax_s2.set_xlabel("Year")
 
     ps = pd.read_csv(tab_dir / "pet_sensitivity_monthly.csv", index_col=0, parse_dates=True)
+    ps = ps[(ps.index.year >= 1986) & (ps.index.year <= 2014)]
     d_pet = ps["PET_Hargreaves_minus_Thornthwaite"]
     clim_pet = d_pet.groupby(d_pet.index.month).agg(["mean", "std"])
     months = np.arange(1, 13)
     cols_p = ["#d62728" if v > 0 else "#1f77b4" for v in clim_pet["mean"]]
     ax_p1.bar(months, clim_pet["mean"], yerr=clim_pet["std"], color=cols_p, edgecolor="k", lw=0.4, capsize=2.2)
-    ax_p1.axhline(d_pet.mean(), color="k", ls="--", lw=1.0, label=f"Annual Mean = {d_pet.mean():+.2f} mm mo⁻¹")
-    mam_m = clim_pet.loc[[3, 4, 5], "mean"].mean()
-    ax_p1.axhline(mam_m, color="#e6550d", ls=":", lw=1.3, label=f"Pre-Monsoon (MAM) = {mam_m:+.2f} mm mo⁻¹")
+    ann_m = float(d_pet.mean())
+    ndjfm_m = float(clim_pet.loc[[11, 12, 1, 2, 3], "mean"].mean())
+    mam_m = float(clim_pet.loc[[3, 4, 5], "mean"].mean())
+    ax_p1.axhline(ann_m, color="k", ls="--", lw=1.0, label=f"Annual Mean (1986-2014) = {ann_m:+.2f} mm mo$^{{-1}}$")
+    ax_p1.axhline(ndjfm_m, color="#d62728", ls="-.", lw=1.1, label=f"Dry Season (Nov-Mar) = {ndjfm_m:+.2f} mm mo$^{{-1}}$ (Mar: +31.83)")
+    ax_p1.axhline(mam_m, color="#e6550d", ls=":", lw=1.2, label=f"Pre-Monsoon (Mar-May) = {mam_m:+.2f} mm mo$^{{-1}}$")
     ax_p1.axhline(0, color="k", lw=0.6)
     ax_p1.set_xticks(months)
     ax_p1.set_xticklabels(["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"])
     ax_p1.set_ylabel(r"$\mathrm{PET}_{\mathrm{HS}} - \mathrm{PET}_{\mathrm{Th}}$ (mm mo$^{-1}$)")
     ax_p1.set_xlabel("Month")
     ax_p1.set_title("(c) Monthly Evapotranspiration Formulation Sensitivity\n(Hargreaves-Samani vs. Daylength-Adjusted Thornthwaite)", fontweight="bold", fontsize=8.9)
-    ax_p1.legend(fontsize=7.2, loc="lower left")
+    ax_p1.legend(fontsize=6.6, loc="lower left", framealpha=0.92)
 
     comp_sum = pd.read_csv(tab_dir / "comprehensive_climate_drought_summary.csv")
     ens_w = comp_sum.groupby(["Scenario", "Window"])[["HotDays35_MAM_yr", "HotDays35_Ann_yr"]].mean()
@@ -349,10 +355,10 @@ def plot_figure_4(cfg, tab_dir, fig_dir):
     mk_piv = mk_tr.pivot_table(index=["Scenario", "From_State"], columns="To_State", values="Probability", aggfunc="mean")
     mk_sd = mk_tr.pivot_table(index=["Scenario", "From_State"], columns="To_State", values="Probability", aggfunc="std")
     trans_types = [
-        ("Normal", "Severe", "Non-Drought → Severe\n(×10 Scaled)"),
-        ("Normal", "ModSev", "Non-Drought → Mod/Sev\n(×5 Scaled)"),
-        ("Moderate", "Severe", "Moderate → Severe\n(Escalation)"),
-        ("Severe", "Severe", "Severe → Severe\n(Persistence)"),
+        ("Normal", "Severe", "Normal -> Severe\n(x10 Scaled)"),
+        ("Normal", "ModSev", "Normal -> Mod/Sev\n(x5 Scaled)"),
+        ("Moderate", "Severe", "Moderate -> Severe\n(Escalation)"),
+        ("Severe", "Severe", "Severe -> Severe\n(Persistence)"),
     ]
     x_t = np.arange(len(trans_types))
     for i, sc in enumerate(["historical", "ssp245", "ssp585"]):
@@ -374,9 +380,9 @@ def plot_figure_4(cfg, tab_dir, fig_dir):
         )
 
     a3.set_xticks(x_t)
-    a3.set_xticklabels([lbl for _, _, lbl in trans_types], fontsize=7.4)
+    a3.set_xticklabels([lbl for _, _, lbl in trans_types], fontsize=6.9)
     a3.set_ylabel("Transition Probability")
-    a3.set_title("(c) First-Order Markov SPEI-6 State Transitions\n(Abrupt Onset Escalation vs. Declining Persistence)", fontweight="bold", fontsize=8.8)
+    a3.set_title("(c) First-Order Markov SPEI-6 State Transitions\n(Abrupt Severe Onset & Severe State Persistence)", fontweight="bold", fontsize=8.8)
     a3.legend(fontsize=7.0, loc="upper left")
 
     fig.savefig(fig_dir / "Fig4_copula_return_periods.png", dpi=300)
@@ -388,7 +394,7 @@ def plot_figure_5(cfg, tab_dir, fig_dir):
     sh_p = pd.read_csv(tab_dir / "ml_shap_global_vs_tail.csv")
     top5 = cfg["cmip6"]["selected_top5"]
 
-    fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(15.4, 4.7), gridspec_kw={"width_ratios": [1.15, 1.0, 1.05]})
+    fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(15.4, 4.7), gridspec_kw={"width_ratios": [1.15, 1.0, 1.08]})
     w = 0.25
     for i, sc in enumerate(["historical", "ssp245", "ssp585"]):
         s = ml_p[ml_p["Scenario"] == sc].set_index("GCM").reindex(top5)
@@ -429,18 +435,29 @@ def plot_figure_5(cfg, tab_dir, fig_dir):
     a2.set_title("(b) Model A (Autoregressive Forecast) Attribution\nLagged State Memory vs. Meteorological Forcing", fontweight="bold", fontsize=8.8)
     a2.legend(fontsize=6.8, loc="lower right")
 
-    sub_mb = sh_p[sh_p["Model_Config"] == "ModelB_MetOnly"].groupby("Variable")[
+    mb_all = sh_p[sh_p["Model_Config"] == "ModelB_MetOnly"]
+    sub_mb = mb_all.groupby("Variable")[
         ["SHAP_Share_Global", "SHAP_Share_Tail_le_m1p0", "SHAP_Share_Tail_le_m1p5"]
     ].mean().sort_values("SHAP_Share_Global") * 100.0
+    hist_tail = mb_all[mb_all["Scenario"] == "historical"].groupby("Variable")["SHAP_Share_Tail_le_m1p5"].mean().reindex(sub_mb.index) * 100.0
     y_mb = np.arange(len(sub_mb))
-    a3.barh(y_mb - w, sub_mb["SHAP_Share_Global"], w, color="#3182bd", edgecolor="k", lw=0.4, label="Global (All Out-of-Sample Months)")
-    a3.barh(y_mb, sub_mb["SHAP_Share_Tail_le_m1p0"], w, color="#fc8d59", edgecolor="k", lw=0.4, label=r"Moderate Drought Tail ($\mathrm{SPEI6} \leq -1.0$)")
-    a3.barh(y_mb + w, sub_mb["SHAP_Share_Tail_le_m1p5"], w, color="#d62728", edgecolor="k", lw=0.4, label=r"Severe Drought Tail ($\mathrm{SPEI6} \leq -1.5$)")
+    h_mb = 0.20
+    a3.barh(y_mb - 1.5 * h_mb, sub_mb["SHAP_Share_Global"], h_mb, color="#3182bd", edgecolor="k", lw=0.4, label="3-Scenario Global Mean")
+    a3.barh(y_mb - 0.5 * h_mb, sub_mb["SHAP_Share_Tail_le_m1p0"], h_mb, color="#fc8d59", edgecolor="k", lw=0.4, label=r"3-Scenario Tail ($\mathrm{SPEI6} \leq -1.0$)")
+    a3.barh(y_mb + 0.5 * h_mb, sub_mb["SHAP_Share_Tail_le_m1p5"], h_mb, color="#d62728", edgecolor="k", lw=0.4, label=r"3-Scenario Tail ($\mathrm{SPEI6} \leq -1.5$)")
+    a3.barh(y_mb + 1.5 * h_mb, hist_tail, h_mb, color="#6a3d9a", edgecolor="k", lw=0.4, label=r"Historical Severe Tail ($\mathrm{SPEI6} \leq -1.5$)")
+    for yi, var_name in enumerate(sub_mb.index):
+        if var_name in ("Precipitation", "Tmax"):
+            v_g = sub_mb.loc[var_name, "SHAP_Share_Global"]
+            v_ht = hist_tail.loc[var_name]
+            a3.text(v_g + 0.6, yi - 1.5 * h_mb, f"{v_g:.1f}%", va="center", fontsize=6.2, color="#1f4e78", fontweight="bold")
+            a3.text(v_ht + 0.6, yi + 1.5 * h_mb, f"{v_ht:.1f}%", va="center", fontsize=6.2, color="#4a1486", fontweight="bold")
+    a3.set_xlim(0, 54.0)
     a3.set_yticks(y_mb)
     a3.set_yticklabels(sub_mb.index, fontsize=8.0)
     a3.set_xlabel("Meteorological Driver Attribution Share (%)")
-    a3.set_title(r"(c) Model B (Non-Tautological Met Drivers Only)" + "\n" + r"Global vs. Severe Drought Tail ($\mathrm{SPEI6} \leq -1.5$)", fontweight="bold", fontsize=8.8)
-    a3.legend(fontsize=6.8, loc="lower right")
+    a3.set_title(r"(c) Model B (Non-Tautological Met Drivers Only)" + "\n" + r"Multi-Scenario & Historical Severe Tail ($\mathrm{SPEI6} \leq -1.5$)", fontweight="bold", fontsize=8.8)
+    a3.legend(fontsize=6.3, loc="lower right", framealpha=0.93)
 
     fig.savefig(fig_dir / "Fig5_ml_shap.png", dpi=300)
     plt.close(fig)

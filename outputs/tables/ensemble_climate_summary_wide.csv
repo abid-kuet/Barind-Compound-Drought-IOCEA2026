@@ -1,0 +1,17 @@
+Quantity,historical,ssp245,ssp585
+Precipitation (mm yr-1),"1,771 [1,741 to 1,836]","2,089 [1,981 to 2,173]","2,170 [2,086 to 2,248]"
+"PET, Hargreaves-Samani (mm yr-1)","1,435 [1,430 to 1,438]","1,436 [1,412 to 1,466]","1,440 [1,418 to 1,473]"
+P - PET (mm yr-1),337 [310 to 405],653 [516 to 729],730 [614 to 826]
+Tmax (deg C),30.30 [30.26 to 30.34],31.03 [30.67 to 31.40],31.51 [30.94 to 31.88]
+Tmin (deg C),21.13 [21.12 to 21.13],22.24 [21.56 to 22.51],22.95 [22.05 to 23.29]
+Diurnal temperature range (deg C),9.18 [9.14 to 9.21],8.79 [8.49 to 9.10],8.56 [8.29 to 8.89]
+Months with SPEI-6 <= -1.0 (%),19.24 [17.20 to 20.99],11.43 [6.72 to 15.58],9.74 [7.01 to 12.95]
+Months with SPEI-6 <= -1.5 (%),7.11 [5.54 to 8.16],5.24 [2.82 to 7.01],4.75 [2.34 to 6.52]
+Change in Precipitation (mm yr-1) vs 1986-2014,,+318,+398
+"Change in PET, Hargreaves-Samani (mm yr-1) vs 1986-2014",,+1,+5
+Change in P - PET (mm yr-1) vs 1986-2014,,+316,+393
+Change in Tmax (deg C) vs 1986-2014,,+0.73,+1.20
+Change in Tmin (deg C) vs 1986-2014,,+1.11,+1.82
+Change in Diurnal temperature range (deg C) vs 1986-2014,,-0.38,-0.62
+Change in Months with SPEI-6 <= -1.0 (%) vs 1986-2014,,-7.81,-9.50
+Change in Months with SPEI-6 <= -1.5 (%) vs 1986-2014,,-1.88,-2.36
